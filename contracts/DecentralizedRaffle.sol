@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -5,7 +6,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
  * @title DecentralizedRaffle
- * @dev A decentralized raffle contract where users can buy tickets and a random winner is selected
+ * @dev Improved version with manual raffle start control
  */
 contract DecentralizedRaffle is Ownable, ReentrancyGuard {
     uint256 public ticketPrice;
@@ -17,6 +18,7 @@ contract DecentralizedRaffle is Ownable, ReentrancyGuard {
     mapping(address => uint256) public ticketCount;
     
     address public winner;
+    bool public raffleActive;
     bool public raffleEnded;
     bool public winnerSelected;
     
@@ -26,6 +28,7 @@ contract DecentralizedRaffle is Ownable, ReentrancyGuard {
     event WinnerSelected(address indexed winner, uint256 prize, uint256 raffleId);
     event PrizeClaimed(address indexed winner, uint256 amount, uint256 raffleId);
     event RaffleStarted(uint256 raffleId, uint256 ticketPrice, uint256 maxTickets, uint256 endTime);
+    event RafflePaused(uint256 raffleId);
     
     constructor(
         uint256 _ticketPrice,
@@ -40,21 +43,33 @@ contract DecentralizedRaffle is Ownable, ReentrancyGuard {
         maxTickets = _maxTickets;
         raffleDuration = _raffleDuration;
         raffleId = 1;
-        
-        _startNewRaffle();
+        raffleActive = false;
     }
     
-    function _startNewRaffle() private {
+        function startRaffle() external onlyOwner {
+        require(!raffleActive, "Raffle already active");
+        require(participants.length == 0, "Clear previous raffle first");
+        
         raffleEndTime = block.timestamp + raffleDuration;
         raffleEnded = false;
         winnerSelected = false;
         winner = address(0);
-        delete participants;
+        raffleActive = true;
         
         emit RaffleStarted(raffleId, ticketPrice, maxTickets, raffleEndTime);
     }
     
+    
+    function pauseRaffle() external onlyOwner {
+        require(raffleActive, "Raffle not active");
+        require(participants.length == 0, "Cannot pause with participants");
+        raffleActive = false;
+        
+        emit RafflePaused(raffleId);
+    }
+    
     function buyTicket(uint256 _numberOfTickets) external payable nonReentrant {
+        require(raffleActive, "Raffle not active");
         require(!raffleEnded, "Raffle has ended");
         require(block.timestamp < raffleEndTime, "Raffle time has expired");
         require(_numberOfTickets > 0, "Must buy at least 1 ticket");
@@ -81,6 +96,7 @@ contract DecentralizedRaffle is Ownable, ReentrancyGuard {
     }
     
     function selectWinner() external nonReentrant {
+        require(raffleActive, "Raffle not active");
         require(
             participants.length == maxTickets || block.timestamp >= raffleEndTime,
             "Raffle conditions not met"
@@ -113,12 +129,13 @@ contract DecentralizedRaffle is Ownable, ReentrancyGuard {
         emit PrizeClaimed(msg.sender, prize, raffleId);
         
         raffleId++;
+        raffleActive = false;
         
         for (uint256 i = 0; i < participants.length; i++) {
             ticketCount[participants[i]] = 0;
         }
         
-        _startNewRaffle();
+        delete participants;
     }
     
     function _generateRandomNumber() private view returns (uint256) {
@@ -141,6 +158,7 @@ contract DecentralizedRaffle is Ownable, ReentrancyGuard {
         uint256 ticketsSold,
         uint256 prizePool,
         uint256 timeRemaining,
+        bool isActive,
         bool isEnded,
         bool isWinnerSelected,
         address currentWinner
@@ -157,6 +175,7 @@ contract DecentralizedRaffle is Ownable, ReentrancyGuard {
             participants.length,
             address(this).balance,
             remaining,
+            raffleActive,
             raffleEnded,
             winnerSelected,
             winner
@@ -172,19 +191,19 @@ contract DecentralizedRaffle is Ownable, ReentrancyGuard {
     }
     
     function updateTicketPrice(uint256 _newPrice) external onlyOwner {
-        require(participants.length == 0, "Cannot change during active raffle");
+        require(!raffleActive, "Pause raffle first");
         require(_newPrice > 0, "Price must be greater than 0");
         ticketPrice = _newPrice;
     }
     
     function updateMaxTickets(uint256 _newMax) external onlyOwner {
-        require(participants.length == 0, "Cannot change during active raffle");
+        require(!raffleActive, "Pause raffle first");
         require(_newMax > 1, "Must allow at least 2 tickets");
         maxTickets = _newMax;
     }
     
     function updateRaffleDuration(uint256 _newDuration) external onlyOwner {
-        require(participants.length == 0, "Cannot change during active raffle");
+        require(!raffleActive, "Pause raffle first");
         require(_newDuration > 0, "Duration must be greater than 0");
         raffleDuration = _newDuration;
     }
