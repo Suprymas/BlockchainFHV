@@ -192,7 +192,7 @@ decentralized-raffle/
 │   └── start-raffle.js            # ONLY OWNER: starts the raffle
 │   
 ├── test/
-│   └── DecentralizedRaffle.test.js # Tests
+│   └── Lock.js # Tests
 ├── hardhat.config.js              # Hardhat configuration
 ├── .env                           # Environment variables
 ├── package.json
