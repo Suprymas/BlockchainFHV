@@ -1,4 +1,6 @@
 # Decentralized Raffle Smart Contract
+![Solidity](https://img.shields.io/badge/Solidity-e6e6e6?style=for-the-badge&logo=solidity&logoColor=black)
+![JavaScript](https://img.shields.io/badge/JS-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
 
 A fully functional decentralized raffle/lottery system built with Solidity and Hardhat. Participants can buy tickets, and after reaching the maximum number of tickets or time expiration, a winner is randomly selected who can claim the entire prize pool.
 
