@@ -57,8 +57,8 @@ A fully functional decentralized raffle/lottery system built with Solidity and H
 
 ```bash
 # Clone the repository
-git clone <your-repo-url>
-cd decentralized-raffle
+git clone https://github.com/Suprymas/BlockchainFHV.git
+cd BlockchainFHV
 
 # Install dependencies
 npm install
